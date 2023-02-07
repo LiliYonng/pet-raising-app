@@ -123,7 +123,7 @@
 
 <style lang="scss" scoped>
 	::v-deep .uni-card__content{
-		display: none;
+		// display: none;
 	}
 	.card-actions{
 		display: flex;
