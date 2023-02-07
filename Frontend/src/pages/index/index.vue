@@ -9,9 +9,10 @@
 			</div>
 			<view class="main">
 				<view class="pet">
-					<view class="display_pet">					
+					<!-- <view class="display_pet">					
 						<image src="../../static/img/dog.png" mode=""></image>
-					</view>
+					</view> -->
+					<ModelComponent/>
 				</view>
 				<view class="icon_tab">
 					<view class="btn_box">
@@ -34,11 +35,15 @@
 </template>
 
 <script>
+	import ModelComponent from 'common/ModelComponent.vue'
 	export default {
 		data() {
 			return {
 				title: '这里是首页'
 			}
+		},
+		components:{
+			ModelComponent,
 		},
 		onLoad() {
 
