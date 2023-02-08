@@ -1,12 +1,12 @@
 import { OrbitControls } from '../jsm/controls/OrbitControls'
 import gLTF from '../jsm/loaders/GLTFLoader.js'
-
+import getSkeletonUtils from '../jsm/utils/SkeletonUtils.js';
 export default function (canvas, THREE) {
   let GLTFLoader = gLTF(THREE);
-
+  let { SkeletonUtils } = getSkeletonUtils(THREE);
   const renderer = new THREE.WebGLRenderer({ canvas });
   renderer.shadowMap.enabled = true;
-
+  let clock = new THREE.Clock();;
   const fov = 45;
   const aspect = 2;  // the canvas default
   const near = 0.1;
@@ -16,8 +16,10 @@ export default function (canvas, THREE) {
 
   const controls = new OrbitControls(camera, canvas);
   controls.target.set(0, 5, 0);
-  controls.update();
+  controls.minPolarAngle = 0;
+  controls.maxPolarAngle = Math.PI;
 
+  controls.update();
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#DEFEFF');
 
@@ -39,6 +41,7 @@ export default function (canvas, THREE) {
     });
     const mesh = new THREE.Mesh(planeGeo, planeMat);
     mesh.rotation.x = Math.PI * -.5;
+    // mesh.rotation.y = Math.PI/2;
     scene.add(mesh);
   }
 
@@ -198,9 +201,12 @@ export default function (canvas, THREE) {
     // boxCenter.x = boxCenter.x*0.5
     // boxCenter.y = boxCenter.y
     // boxCenter.z=boxCenter.z*0.5
+
     console.log(boxCenter)
+    boxCenter.y+=1;
+    boxCenter.z+=1;
     // point the camera to look at the center of the box
-    camera.lookAt(boxCenter, boxCenter.y, boxCenter.z);
+    camera.lookAt(boxCenter.x, boxCenter.y, boxCenter.z);
   }
 
   let curve;
@@ -256,17 +262,26 @@ export default function (canvas, THREE) {
     }
   }
 
-  // const cars = [];
-  {
+  let model = {};
+  loadModel();
+  function loadModel() {
     const gltfLoader = new GLTFLoader();
     console.log('嘻嘻嘻嘻嘻')
     gltfLoader.load('http://localhost:8080/model/dog-2/scene.gltf', (gltf) => {
-      console.log('哈哈哈哈哈哈')
+      console.log('哈哈哈哈哈啊哈')
       console.log(gltf)
       const root = gltf.scene;
-      root.scale.set(8,8,8)
-      scene.add(root);
-
+      console.log('啦啦啦');
+      model.scene = gltf.scene;
+      model.animations = gltf.animations;
+      root.scale.set(10,10,10);
+      console.log('尽量加快了')
+      // root.rotateX (Math.PI/2)
+      // root.rotateY (Math.PI)
+      instantiateUnits(root);
+      console.log('添加成功')
+      console.log(scene)
+      // scene.add(root);
       root.traverse((obj) => {
         if (obj.castShadow !== undefined) {
           obj.castShadow = true;
@@ -303,8 +318,15 @@ export default function (canvas, THREE) {
       frameArea(boxSize * 0.5, boxSize, boxCenter, camera);
 
       // update the Trackball controls to handle the new size
-      controls.maxDistance = boxSize * 10;
+      // controls.maxDistance = boxSize * 10;
+      controls.minDistance = boxSize*1;
+      controls.maxDistance = boxSize*10;
+      // boxCenter.x = boxCenter.x - 50;
+      // boxCenter.y-=50;
+      // boxCenter.z -=50;
+      console.log(boxCenter)
       controls.target.copy(boxCenter);
+      // controls.target.set(boxCenter.x-50,boxCenter-50,boxCenter-50)
       controls.update();
     }, (e) => {
       console.log('loading')
@@ -331,7 +353,8 @@ export default function (canvas, THREE) {
 
     if (resizeRendererToDisplaySize(renderer)) {
       const canvas = renderer.domElement;
-      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      // camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.aspect = 1.5;
       camera.updateProjectionMatrix();
     }
 
@@ -359,11 +382,45 @@ export default function (canvas, THREE) {
       //   car.position.lerpVectors(carPosition, carTarget, 0.5);
       // });
     }
-
+    var mixerUpdateDelta = clock.getDelta();
+    if(mixers[0])
+    {
+      mixers[0].update(mixerUpdateDelta);
+    }
     renderer.render(scene, camera);
 
     canvas.requestAnimationFrame(render);
   }
+  const mixers = [];
+  function instantiateUnits(root){
+    var clonedScene = SkeletonUtils.clone(model.scene);
+    console.log('手机掉')
+    var clonedMesh = clonedScene.getObjectByName('Object_0');
+    console.log(clonedMesh)
+    // if (clonedMesh) {
+    console.log(model.animations)
+    scene.add(root);
+       let mixer = startAnimation(clonedMesh, model.animations, 'standing');
 
+      // Save the animation mixer in the list, will need it in the animation loop
+      mixers.push(mixer);
+      
+  // }
+  }
+  function startAnimation(skinnedMesh, animations, animationName) {
+    console.log('开始动画啦')
+    // var mixer = new THREE.AnimationMixer(skinnedMesh);
+    const mixer = new THREE.AnimationMixer(model.scene);
+    var clip = THREE.AnimationClip.findByName(animations, animationName);
+    if (clip) {
+
+        var action = mixer.clipAction(clip);
+        action.play();
+        console.log('开始播放')
+    }
+
+    return mixer;
+
+  }
   canvas.requestAnimationFrame(render);
 }
