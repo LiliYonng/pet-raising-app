@@ -83,7 +83,7 @@
 		}
 	}
 	.main{
-		overflow: hidden;
+		// overflow: hidden;
 		.pet{
 			width:100%;
 			// height: 500px;

@@ -1,7 +1,5 @@
 <template>
-      <view style="height: 500px; width: 100%;">
-          <canvas type="webgl" id="canvasDom" @touchstart="touchStart" @touchmove="touchMove" @touchend="touchEnd" @touchcancel="touchCancel" @longtap="longTap" @tap="tap"></canvas>
-      </view>
+    <canvas type="webgl" id="canvasDom" @touchstart="touchStart" @touchmove="touchMove" @touchend="touchEnd" @touchcancel="touchCancel" @longtap="longTap" @tap="tap"></canvas>
 </template>
 <script>    
     import * as THREE from '../libs/three.weapp.js'
@@ -9,20 +7,31 @@
     import OBJLoader from '../jsm/loaders/OBJLoader.js'
     // import loadgLTF from '../utils/loadgLTF.js'
     import { OrbitControls } from '../jsm/controls/OrbitControls'
-    import getSkeletonUtils from '../jsm/utils/SkeletonUtils.js';
+
+    let composer = null;
     let window = THREE.global;
     let { document } = window;
+    let scene;
+    let camera;
+    let time;
+    let canvas;
+    let renderer;
+    let raycaster;
+    let projector;
+    let lastChange;
+    let progress = 0;
+    let clock;
+    let mixers;
+    let animationId= null;
+    let defalutAction=null;
+    let defaultMixer = null;
     export default {
         data() {
             return {
-              mouse:'',
-              canvas:'',
-              camera:null,
-              renderer:null,
+              mouse:{},
               controls:null,
-              clock:null,
               model:{},
-              mixers:[],
+              animationName:"sitting",
             }
         },
         mounted(){
@@ -31,14 +40,10 @@
               .select('#canvasDom')
               .node()
               .exec((res) => {
-                console.log('哈哈黑')
-                console.log(res)
-                const canvas = THREE.global.registerCanvas(res[0].node)
-                me.canvas = canvas
-                console.log('呵呵黑')
-                me.init(me.canvas)
-                // me.render()
-                canvas.requestAnimationFrame(me.render.bind(me));
+                canvas = THREE.global.registerCanvas(res[0].node)
+                me.init(canvas)
+                me.render()
+                // canvas.requestAnimationFrame(me.render.bind(me));
               })
         },
         onUnload() {
@@ -47,52 +52,30 @@
         methods: {
           //模型相关
           init(canvas){ //初始化加载器，相机，灯光
-              this.renderer = new THREE.WebGLRenderer({ canvas });
-              this.renderer.shadowMap.enabled = true;
-              this.clock = new THREE.Clock();;
+              // projector = new THREE.Projector();
+              lastChange = {model:null,color:null};
+              renderer = new THREE.WebGLRenderer({ canvas });
+              raycaster = new THREE.Raycaster();
+              renderer.shadowMap.enabled = true;
+              clock = new THREE.Clock();;
               const fov = 45;
-              const aspect = 2;  // the canvas default
+              const aspect = 1;  // the canvas default
               const near = 0.1;
               const far = 100;
-              this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-              this.camera.position.set(0, 10, 20);
-              this.controls = new OrbitControls(this.camera, canvas);
+              camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+              camera.position.set(0, 10, 20);
+              this.controls = new OrbitControls(camera, canvas);
               this.controls.target.set(0, 5, 0);
-              this.controls.minPolarAngle = 0;
-              this.controls.maxPolarAngle = Math.PI;
               this.controls.update();
-              this.scene = new THREE.Scene();
-              this.scene.background = new THREE.Color('#DEFEFF');
-
-              // 灯光
-                {
-              const planeSize = 40;
-
-              const loader = new THREE.TextureLoader();
-              const texture = loader.load('https://threejsfundamentals.org/threejs/resources/images/checker.png');
-              texture.wrapS = THREE.RepeatWrapping;
-              texture.wrapT = THREE.RepeatWrapping;
-              texture.magFilter = THREE.NearestFilter;
-              const repeats = planeSize / 2;
-              texture.repeat.set(repeats, repeats);
-
-              const planeGeo = new THREE.PlaneBufferGeometry(planeSize, planeSize);
-              const planeMat = new THREE.MeshPhongMaterial({
-                map: texture,
-                side: THREE.DoubleSide,
-              });
-              const mesh = new THREE.Mesh(planeGeo, planeMat);
-              mesh.rotation.x = Math.PI * -.5;
-              // mesh.rotation.y = Math.PI/2;
-              this.scene.add(mesh);
-            }
+              scene = new THREE.Scene();
+              scene.background = new THREE.Color('#DEFEFF');
 
             {
-              const skyColor = 0xB1E1FF;  // light blue
-              const groundColor = 0xB97A20;  // brownish orange
+              const skyColor = 0xFFFFFF;  // light blue
+              const groundColor = 0xFFFFFF;  // brownish orange
               const intensity = 1;
               const light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
-              this.scene.add(light);
+              scene.add(light);
             }
               const color = 0xFFFFFF;
               const intensity = 1;
@@ -105,8 +88,8 @@
               light.shadow.mapSize.width = 2048;
               light.shadow.mapSize.height = 2048;
 
-              this.scene.add(light);
-              this.scene.add(light.target);
+              scene.add(light);
+              scene.add(light.target);
               const cam = light.shadow.camera;
               cam.near = 1;
               cam.far = 2000;
@@ -116,10 +99,10 @@
               cam.bottom = -1500;
 
               const cameraHelper = new THREE.CameraHelper(cam);
-              this.scene.add(cameraHelper);
+              scene.add(cameraHelper);
               cameraHelper.visible = false;
               const helper = new THREE.DirectionalLightHelper(light, 100);
-              this.scene.add(helper);
+              scene.add(helper);
               helper.visible = false;
               function updateCamera() {
                 // update the light target's matrixWorld because it's needed by the helper
@@ -132,12 +115,12 @@
                 cameraHelper.update();
               }
               updateCamera();
-              this.addCurve();
+              // this.addCurve();
               this.loadGLTF();
           },
           // 相机调整
           frameArea(sizeToFitOnScreen, boxSize, boxCenter, camera) {
-            const halfSizeToFitOnScreen = sizeToFitOnScreen * 0.8;
+            const halfSizeToFitOnScreen = sizeToFitOnScreen * 0.5;
             const halfFovY = THREE.Math.degToRad(camera.fov * .5);
             const distance = halfSizeToFitOnScreen / Math.tan(halfFovY);
             // compute a unit vector that points in the direction the camera is now
@@ -150,36 +133,44 @@
             // move the camera to a position distance units way from the center
             // in whatever direction the camera was from the center already
             camera.position.copy(direction.multiplyScalar(distance).add(boxCenter));
-
+            console.log(camera.position)
             // pick some near and far values for the frustum that
             // will contain the box.
             camera.near = boxSize / 100;
             camera.far = boxSize * 100;
-
+            camera.zoom = 1 
             camera.updateProjectionMatrix();
-            boxCenter.y+=1;
-            boxCenter.z+=1;
+            boxCenter.y+=0.1;
+            // boxCenter.z+=1;
             // point the camera to look at the center of the box
             camera.lookAt(boxCenter.x, boxCenter.y, boxCenter.z);
+                          // this.controls.minPolarAngle = 0;
+              // this.controls.maxPolarAngle = 0;
+              this.controls.minPolarAngle = Math.PI / 2;
+              this.controls.maxPolarAngle = Math.PI / 2;
+
+              // 禁止相机俯仰
+              this.controls.minAzimuthAngle = -Infinity;
+              this.controls.maxAzimuthAngle = Infinity;
+              this.controls.update();
           },
 
         //加载模型 
         loadGLTF(){
             let GLTFLoader = gLTF(THREE);
           const gltfLoader = new GLTFLoader();
+          // http://www.l0v0l.xyz/dog-animated/scene.gltf
+          console.log('啊哈哈')
           gltfLoader.load('http://localhost:8080/model/dog-2/scene.gltf', (gltf) => {
+            console.log(gltf)
             const root = gltf.scene;
+            root.name = 'dog'
             this.model.scene = gltf.scene;
             this.model.animations = gltf.animations;
-            root.scale.set(10,10,10);
+            root.scale.set(5,5,5);
+            // scene.add(root);
             this.instantiateUnits(root); //动画
-            // this.scene.add(root);
-            root.traverse((obj) => {
-              if (obj.castShadow !== undefined) {
-                obj.castShadow = true;
-                obj.receiveShadow = true;
-              }
-            });
+            // scene.add(root);
             root.updateMatrixWorld();
             const box = new THREE.Box3().setFromObject(root);
 
@@ -187,7 +178,7 @@
             const boxCenter = box.getCenter(new THREE.Vector3());
 
             // set the camera to frame the box
-            this.frameArea(boxSize * 0.5, boxSize, boxCenter, this.camera);
+            this.frameArea(boxSize*0.5, boxSize, boxCenter, camera);
             this.controls.minDistance = boxSize*1;
             this.controls.maxDistance = boxSize*10;
             this.controls.target.copy(boxCenter);
@@ -210,33 +201,49 @@
         // 动画
         instantiateUnits(root){
           let { SkeletonUtils } = getSkeletonUtils(THREE);
-          var clonedScene = SkeletonUtils.clone(this.model.scene);
-          var clonedMesh = clonedScene.getObjectByName('Object_0');
-          this.scene.add(root);
-          let mixer = this.startAnimation(clonedMesh, this.model.animations, 'standing');
+          // var clonedScene = SkeletonUtils.clone(this.model.scene);
+          // console.log(clonedScene)
+          // var clonedMesh = clonedScene.getObjectByName('Object_0');
+          // console.log(this.model.animations)
             // Save the animation mixer in the list, will need it in the animation loop
-          this.mixers.push(mixer);
-            
+           mixers =  this.startAnimation(null, this.model.animations, this.animationName)
+                     scene.add(root);
         // }
+        // mixers = new THREE.AnimationMixer(this.model.scene);
+        //   var clip = THREE.AnimationClip.findByName(this.model.animations, 'sitting');
+        //   if (clip) {
+        //       const action = mixers.clipAction(clip);
+        //       action.play();
+        //   }
         },
         // 渲染
-          render(time) {
-                  time *= 0.001;  // convert to seconds
-                // if (this.resizeRendererToDisplaySize(this.renderer)) {
-                //   const canvas = this.renderer.domElement;
-                //   // camera.aspect = canvas.clientWidth / canvas.clientHeight;
-                //   this.camera.aspect = 1.5;
-                //   this.camera.updateProjectionMatrix();
-                // }
-                var mixerUpdateDelta = this.clock.getDelta();
-                if(this.mixers[0])
-                {
-                  this.mixers[0].update(mixerUpdateDelta);
+          render() {
+                if(animationId){
+                  canvas.cancelAnimationFrame(animationId)
                 }
-                const canvas = this.canvas;
-                const renderer = this.renderer;
-                canvas.requestAnimationFrame(this.render.bind(this));
-                renderer.render(this.scene, this.camera);
+                  // time *= 0.001;  // convert to seconds
+                if (this.resizeRendererToDisplaySize(renderer)) {
+                  const canvas = renderer.domElement;
+                  // camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                  camera.aspect = 2;
+                  camera.updateProjectionMatrix();
+                }
+                var mixerUpdateDelta = clock.getDelta();
+                if(mixers)
+                {
+                  mixers.update(mixerUpdateDelta);
+                }
+                renderer.render(scene, camera);
+                if(composer)
+                {
+                  try {
+                    composer.render()
+                  } catch (error) {
+                    console.log('出错啦')
+                    console.log(error)
+                  }
+                }
+                animationId = canvas.requestAnimationFrame(this.render);
         },
         addCurve(){
           let curve;
@@ -286,19 +293,22 @@
             curveObject.scale.set(100, 100, 100);
             curveObject.position.y = -621;
             curveObject.visible = false;
-            this.scene.add(curveObject);
+            scene.add(curveObject);
         },
         // 开始动画
         startAnimation(skinnedMesh, animations, animationName) {
           // var mixer = new THREE.AnimationMixer(skinnedMesh);
+          if(defalutAction)
+            defalutAction.stop()
           const mixer = new THREE.AnimationMixer(this.model.scene);
           var clip = THREE.AnimationClip.findByName(animations, animationName);
           if (clip) {
-              var action = mixer.clipAction(clip);
-              action.play();
+              defalutAction= mixer.clipAction(clip);
+              defalutAction.play();
           }
           return mixer;
         },
+
         touchStart(e) {
           THREE.global.touchEventHandlerFactory('canvas', 'touchstart')(e)
         },
@@ -319,10 +329,63 @@
           console.log('长按')
           console.log('canvas', e)
         },
-        tap(e) {
-          console.log('短触')
-          // console.log('canvas', e)
+        tap(e){
+          console.log('短触碰')
+          this.changeAnimation(this.model.animations[ Math.random()%5].name)
+          // this.animationName = "play_dead"
+          // mixers = this.startAnimation(null, this.model.animations, this.animationName);
         },
+        changeAnimation(animationName){
+          var clip = THREE.AnimationClip.findByName(this.model.animations, animationName);
+          if (clip) {
+              const action = mixers.clipAction(clip);
+              action.play();
+          }
+        }
+        // async tap(e) {
+        //   console.log('短触2')
+        //   const rect = canvas.getBoundingClientRect()
+        //   let touch = e.touches[0];
+        //   const mouse = new THREE.Vector2();
+        //   console.log(touch.clientY)
+        //   	//获取 不同系统下、不同手机下的宽和高
+        //      let SystemInfoSync = await wx.getSystemInfoSync()
+        //   // canvas的width的一半 除以 (canvas的width 除以 系统的windowWidth)
+        //     let Cwidth =(rect.width / SystemInfoSync.windowWidth)
+        //     // canvas的height的一半 除以 (canvas的height 除以 系统的windowHeight)
+        //     let Cheight =(rect.height / SystemInfoSync.windowHeight)
+        //      mouse.x = -((touch.clientX ) / rect.width) * 2 + 1;
+        //     mouse.y = -((touch.clientY - 100) / rect.height) * 2 + 1;
+        //   // mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+        //   // mouse.y = -((touch.clientY - rect.top )/ rect.height) * 2 + 1;
+        //   raycaster.setFromCamera(mouse, camera);
+        //   // create an array containing all objects in the scene with which the ray intersects
+        //   // var intersects = raycaster.intersectObjects( scene.children );
+        //   let intersects = []
+        //   intersects = raycaster.intersectObject(this.model.scene,true);
+        //   if (intersects.length>0){
+        //     console.log('选中了')
+        //     console.log(intersects)
+        //       // if (Boolean(lastChange.model)) {
+        //       //   lastChange.model.material.emissive.setHex(lastChange.color);
+        //       // }
+        //         // lastChange.model = intersects[0][0].object
+        //         // lastChange.color = intersects[0][0].object.material.emissive.getHex();
+        //         console.log(intersects[0].object.name)
+        //         console.log(intersects)
+        //         // this.outlineObj(intersects[0][0].object,canvas,scene,camera,renderer)
+                
+        //         intersects[0].object.material.emissive.setHex( Math.random() * 0xffffff );
+        //       // else{
+        //       //   lastChange.model = null;
+        //       //   lastChange.color = null;
+        //       // }
+        //       // if(progress == 0){
+        //       //    this.render();
+        //       // }
+        //       // intersects[0][0].object.material.color.setRGB(0.2,0.6,0.4);
+        //   }
+        // },
         
           
         },
@@ -331,5 +394,6 @@
 <style lang="scss">
   canvas{
     height:250px;
+    width:100%;
   }
 </style>
