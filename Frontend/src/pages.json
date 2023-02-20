@@ -2,10 +2,14 @@
 	"easycom": {
 		"autoscan": true,
 		"custom": {
+			"^u-(.*)": "uview-ui/components/u-$1/u-$1.vue",
 			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
 		}
 	},
 	"pages": [
+		{
+			"path": "pages/shop/shop"
+		},
 		{
 			"path": "pages/index/index",
 			"style": {
@@ -95,6 +99,8 @@
 				}
 			}
 			
+		},{
+			"path": "pages/shop/goodsDetail"
 		}
     ],
 	"globalStyle": {
@@ -123,8 +129,8 @@
 				"selectedIconPath": "static/dailyIcon2.png"
 			},
 			{
-				"pagePath": "pages/newsPage/newsPage",
-				"text": "知识",
+				"pagePath": "pages/shop/shop",
+				"text": "商店",
 				"iconPath": "static/newsIcon.png",
 				"selectedIconPath": "static/newsIcon2.png"
 			},

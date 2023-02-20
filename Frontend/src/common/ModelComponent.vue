@@ -7,7 +7,7 @@
     import OBJLoader from '../jsm/loaders/OBJLoader.js'
     // import loadgLTF from '../utils/loadgLTF.js'
     import { OrbitControls } from '../jsm/controls/OrbitControls'
-
+    import getSkeletonUtils from "../jsm/utils/SkeletonUtils"
     let composer = null;
     let window = THREE.global;
     let { document } = window;
@@ -45,9 +45,6 @@
                 me.render()
                 // canvas.requestAnimationFrame(me.render.bind(me));
               })
-        },
-        onUnload() {
-          THREE.global.clearCanvas()
         },
         methods: {
           //模型相关
@@ -341,6 +338,14 @@
               const action = mixers.clipAction(clip);
               action.play();
           }
+        },
+         cancleAnimation() {
+          if(animationId)
+          canvas.cancelAnimationFrame(animationId)
+          //  THREE.global.clearCanvas();
+        },
+        activeAnimation(){
+          this.render()
         }
         // async tap(e) {
         //   console.log('短触2')
