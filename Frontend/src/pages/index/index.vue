@@ -25,7 +25,7 @@
 						<image src="../../static/zhishi.png" class="icon_btn" mode=""></image>
 					</view>
 					<view class="btn_box">
-						<p>添加提醒</p>
+						<p>购买用具</p>
 						<image src="../../static/add.png" class="icon_btn" mode=""></image>
 					</view>
 				</view>
@@ -39,7 +39,8 @@
 	export default {
 		data() {
 			return {
-				title: '这里是首页'
+				title: '这里是首页',
+				firstShow:true,
 			}
 		},
 		components:{
@@ -47,6 +48,14 @@
 		},
 		onLoad() {
 
+		},
+		onHide(){
+			this.$children[0].cancleAnimation()
+			this.firstShow = false;
+		},
+		onShow(){
+			if(!this.firstShow)
+			this.$children[0].activeAnimation()
 		},
 		methods: {
 
