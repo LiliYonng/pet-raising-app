@@ -1,5 +1,5 @@
 <template>
-	<view class="page-content" :style="'padding-bottom: calc(15vw + '+safeBottom+'px)'" v-if="goodsInfo.name">
+	<view class="page-content" :style="'padding-bottom: calc(5vw + '+safeBottom+'px)'" v-if="goodsInfo.name">
         <view :class="'popup-container'+(popupShow?' show':'')">
 			<view class="mask" @click="closePopup"></view>
 			<view class="popup">
@@ -7,7 +7,7 @@
 				<view class="popup-header flex">
 					<image :src="goodsInfo.cover" mode="aspectFit" ></image>
 					<view class="popup-info">
-						<view class="info-price flex">¥<text style="font-size: 75rpx;">{{goodsInfo.price}}</text></view>
+						<view class="info-price flex">¥<text style="font-size: 75rpx;">{{goodsInfo.priceMin * goodsNum}}</text></view>
 						<view class="info-spec">{{specText ? specText :'请选择：地址、颜色、尺码' }}</view>
 					</view>
 				</view>
@@ -29,15 +29,15 @@
 					<view class="spec-row">
 						<view class="spec-title">颜色分类</view>
 						<view class="spec-list">
-							<view v-for="(color,ind) in goodsInfo.color"
-                             @click="selectedColor =ind" :class="selectedColor == ind ? 'active' :''">{{color}}</view>
+							<view v-for="(color,ind) in goodsInfo.colors"
+                             @click="getStore('color',ind)" :class="selected.color == ind ? 'active' :''">{{color}}</view>
 						</view>
                     </view>
                     <view class="spec-row">
 						<view class="spec-title">尺码</view>
 						<view class="spec-list">
-                            <view v-for="(size,ind) in goodsInfo.size"
-                             @click="selectedSize =ind" :class="selectedSize == ind ? 'active' :''">{{size}}</view>
+                            <view v-for="(size,ind) in goodsInfo.sizes"
+                             @click="getStore('size',ind)" :class="selected.size == ind ? 'active' :''">{{size}}</view>
 						</view>
                     </view>
                     <view class="msg box flex">
@@ -46,13 +46,13 @@
                     </view>
                     <view class="num-row flex">
 						<view class="num-title">
-							<view>租赁数量</view>
-							<text>库存{{order.stock ? order.stock : 'xx'}}</text>
+							<view>数量</view>
+							<text>库存{{order.store}}</text>
 						</view>
                         <view class="num-action flex">
                         <image class="link" src="/static/goods/minus.svg" mode="aspectFit" @click="goodsNum > 1 && goodsNum--"></image>
                         <input type="number" v-model="goodsNum" @input="changeNum"  />
-                        <image class="link" src="/static/goods/plus.svg" mode="aspectFit"@click="goodsNum < order.stock && goodsNum++"></image>
+                        <image class="link" src="/static/goods/plus.svg" mode="aspectFit"@click="goodsNum < order.store && goodsNum++"></image>
                         </view>
 					</view>
 				</view>
@@ -60,7 +60,7 @@
 			</view>
         </view>
         <!-- 底栏 START -->
-		<view class="bottom-bar flex" :style="'padding-bottom:'+safeBottom+'px'">
+		<view class="bottom-bar flex" >
 			<view class="bottom-bar-inner flex">
 				<view class="flex">
 					<view class="bottom-btn link" @click="toService">
@@ -79,7 +79,7 @@
 		</view>
 		<!-- 底栏 END -->
 		<swiper class="goods-gallery" @change="bannerChange">
-			<swiper-item v-for="(img, index) in goodsInfo.imgs" :key="index">
+			<swiper-item v-for="(img, index) in String(goodsInfo.imgs).split(',')" :key="index">
 				<image :src="img" mode="aspectFit"></image>
 			</swiper-item>
 		</swiper>
@@ -116,7 +116,7 @@
 				</view>
 				<view class="select-item flex">
 					<view class="label">参数</view>
-					<view class="value">商品名称：AppleiPhone 14 Pro Max</view>
+					<view class="value">商品名称：{{goodsInfo.name}}</view>
 					<image src="/static/goods/arrow-right-gray.svg" mode="aspectFit" style="opacity:0"></image>
 				</view>
 				<view class="select-item flex">
@@ -137,62 +137,31 @@
 		data() {
 			return {
                 addr: {},
-				specText: '',
 				safeBottom: 34,
 				bannerIndex: 0,
 				goodsNum: 1,
-                popupShow: false,
-				goodsInfo: {
-                    content: "<p>iPhone 12简单介绍</p>",
-                    cover: "https://g-search2.alicdn.com/img/bao/uploaded/i4/i1/2215425659358/O1CN01MD8wky2J01C8JEOO7_!!2215425659358.jpg_580x580Q90.jpg_.webp",
-                    faved: 1,
-                    imgs: ['https://g-search2.alicdn.com/img/bao/uploaded/i4/i1/2215425659358/O1CN01MD8wky2J01C8JEOO7_!!2215425659358.jpg_580x580Q90.jpg_.webp'],
-                    name: "iPhone 12",
-                    priceMax: "88.60",
-                    priceMin: "38.80",
-                    tags: ["99新", "性价比"],
-                    color:['红色','黑色'],
-                    size:['80x10cm','60x20cm']
+                selected:{
+                    color:-1,
+                    size:-1,
                 },
-				goodsDesc: {},
-				shopInfo: {},
+                popupShow: false,
+				goodsInfo: {},
 				goodsId:'',
-				subSpecsId:0,
-				formatPrice:[],
-				specsAry:[],
-				order:{},
-				type:null,
-				daysInd:null,
-				daysList:['90','180','365'],
-				customDays:null,
-				showDatePicker:false,
-			}
-		},
-		onReachBottom(){
-			if(this.$data.goodsDesc === {}){
-				this.loadGoodsDesc();
-			} else if(this.$data.shopInfo === {}){
-				this.loadShopInfo();
+				order:{
+                    store:'xx'
+                }
 			}
 		},
 		onLoad(e){
-			let safeBottom = 0;
-			// if(app.globalData.sysInfo.safeArea){
-			// 	safeBottom = app.globalData.sysInfo.safeArea.bottom;
-			// } else {
-			// 	if(app.globalData.sysInfo.platform == 'ios') safeBottom = 34;
-			// }
-			// this.$data.safeBottom = safeBottom;
 			this.goodsId = e.gid;
-			// this.loadGoods();
+			this.loadGoods();
 		},
 		methods: {
 			loadGoods(){
 				this.$api.getGoodsDetail({gid:this.goodsId}).then(res=>{
-					this.goodsInfo = res.data
-					this.specsAry.length = this.goodsInfo.specs.length
-					this.formatPrice = this.goodsInfo.priceMin.split('.')
-					this.order.dayPrice = [...this.formatPrice]
+					this.goodsInfo = res.goodsInfo
+                    this.goodsInfo.sizes = String(res.goodsInfo.sizes).split(',')
+                    this.goodsInfo.colors = String(res.goodsInfo.colors).split(',')
 				})
 			},
 			logining(){ 
@@ -202,88 +171,70 @@
 					return Promise.resolve()
 				}
 			},
-			loadGoodsDesc(){
-				
-			},
-			loadShopInfo(){
-				
-			},
             openPopup(){
 				this.$data.popupShow = true;
 			},
 			closePopup(){
 				this.$data.popupShow = false;
 			},
+            pickAddr(){
+            wx.chooseAddress({
+            success (res) {
+                console.log(res)
+            }})
+            },
 			doBuy(){
-				const ary = this.specsAry.filter(Boolean)
-				if(!this.type || ary.length != this.goodsInfo.specs.length)
+                console.log('购买')
+				if(this.selected.color==-1 || this.selected.size==-1)
 				{
 					uni.showToast({
-						title:'请选择规格',
-						icon:'fail'
+						title:'请选择参数',
+						icon:'error'
 					})
 					return
 				}
-				if(typeof(this.daysInd) != 'number' || (this.daysInd==-1 && !this.customDays)){
+				if(Number(this.goodsNum) > Number(this.order.store)){
 					uni.showToast({
-						title:'请选择租期',
-						icon:'fail'
+						title:'超出库存量'+this.order.store,
+						icon:'error'
 					})
 					return
 				}
-				if(this.daysInd == -1 && Number(this.customDays) < Number(this.goodsInfo.startDays) )
-				{
-					uni.showToast({
-						title:'租期不得低于起租期'+this.goodsInfo.startDays+'天',
-						icon:'fail'
+                if(!this.addr.sendName){
+                    uni.showToast({
+						title:'请选择配送地址',
+						icon:'error'
 					})
 					return
-				}
-				if(this.order.stock && Number(this.goodsNum) > Number(this.order.stock)){
-					uni.showToast({
-						title:'超出库存量'+this.order.stock,
-						icon:'fail'
-					})
-					return
-				}
-				const days = this.daysInd == -1 ? this.customDays :this.daysList[this.daysInd]
-				const data = {
-					type: this.type,
-					stid:this.order.stid,
-					gid:this.goodsId,
-					num:this.goodsNum,
-					days:days,
-					goodsName:this.goodsInfo.name,
-					cover:this.goodsInfo.cover
-				}
-				this.logining().then(res=>{
-				setTimeout(()=>{
-					uni.navigateTo({
-						url: '/pages/goods/buy?data='+encodeURIComponent(JSON.stringify(data))
-					})
-				},500)
-				})
+                }
+                const data = {
+                    gid:this.goodsId,
+                    ...this.selected
+                }
+				// this.logining().then(res=>{
+				// setTimeout(()=>{
+				// 	uni.navigateTo({
+				// 		url: '/pages/goods/buy?data='+encodeURIComponent(JSON.stringify(data))
+				// 	})
+				// },500)
+				// })
 
 			},
 			bannerChange(e){
 				this.$data.bannerIndex = e.detail.current;
 			},
-			chooseSpec(row,gsid,title){
-				// this.specsAry[row] = gsids
-				this.specsAry.splice(row, 1, gsid)
-				this.specText += title+' '
-				const arr = this.specsAry.filter(Boolean)
-				if (arr.length === this.goodsInfo.specs.length)
-				{
-					this.getStorga()
-				}
-			},
-			getStorga(){
-				const str = this.specsAry.join(',')
-				this.$api.getOrderData({gsids:str}).then(res=>{
-					this.order = res.data
-					this.order.dayPrice = this.order.dayPrice ? res.data.dayPrice.split('.') : ''
-				})
+			getStore(key,ind){
+                this.selected[key] = ind;
+                if(this.selected.color!=-1 && this.selected.size!=-1){
+                    this.$api.getStore({gid:this.goodsId,...this.selected}).then(res=>{
+                        this.order.store = res.data.store? res.data.store : 0
+                    })
+                }
+				// const str = this.specsAry.join(',')
+				// this.$api.getOrderData({gsids:str}).then(res=>{
+				// 	this.order = res.data
+				// 	this.order.dayPrice = this.order.dayPrice ? res.data.dayPrice.split('.') : ''
+				// })
 			},
 			favGoods(){
 				this.goodsInfo.faved = !this.goodsInfo.faved
@@ -295,45 +246,20 @@
 				})
 			},
 			toService(){
-				uni.switchTab({ url: '/pages/service/index'})
+			
 			},
 			changeNum(option){
 				let value = option.target.value
-				if(this.order.stock && Number(value)> Number(this.order.stock)){
+				if(Number(value)> Number(this.order.store)){
 					uni.showToast({
 						title: '超出库存量',
-						icon: 'fail',
+						icon: 'error',
 					})
 					this.$nextTick(()=>{
-						this.goodsNum = this.order.stock
+						this.goodsNum = this.order.store
 					})
 				}
 			},
-			pickDate(){
-				this.daysInd=-1
-				this.showDatePicker=true
-			},
-			selectDate(value){
-				const date = value[0]
-				const now = this.dayjs().format('YYYY-MM-DD')
-				const days = this.dayjs(date).diff(now, 'day')
-				if((Number(days) < Number(this.goodsInfo.startDays))){
-					uni.showToast({
-						title: '不能低于最低租期'+this.goodsInfo.startDays,
-						icon: 'fali',
-						mask: true
-					})
-				}
-				else{
-					uni.showToast({
-						title: '选择租期为 '+days+' 天',
-						icon: 'success',
-						mask: true
-					})
-					this.customDays = days
-					this.showDatePicker = false
-				}
-			}
 		}
 	}
 </script>
@@ -354,7 +280,7 @@
 }
 .popup .spec-content {
     padding: 4.8vw 0;
-    height: calc(100% - 60vw);
+    // height: calc(100% - 60vw);
     overflow-y: scroll;
     margin-bottom:50vw;
 }
@@ -499,13 +425,13 @@
     height: 100%;
 }
 .popup-container.show .popup {
-    top: 32.2667vw;
+    top: 15.2667vw;
 }
 .popup-container .popup {
     top: 100vh;
     border-radius: 4.2667vw 4.2667vw 0 0;
     width: 100%;
-    height: calc(100vh - 32.2667vw);
+    height: calc(112vh - 32.2667vw);
     background-color: #fff;
     position: absolute;
     padding: 6.1333vw 4.5333vw;
@@ -710,11 +636,11 @@ swiper-item {
 }
 .goods-gallery {
     width: 100vw;
-    height:88vw;
+    height:75vw;
 }
 .goods-gallery image {
     width: 100%;
-    height: 88vw;
+    height: 75vw;
     background-color:#fff;
 }
 .shop-info{

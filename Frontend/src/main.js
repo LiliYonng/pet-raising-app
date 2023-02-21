@@ -1,10 +1,11 @@
 import App from './App'
-
+import api from "./api";
 // #ifndef VUE3
 import Vue from 'vue'
 Vue.config.productionTip = false
 import uView from "uview-ui";
 Vue.use(uView);
+Vue.prototype.$api = api;
 App.mpType = 'app'
 const app = new Vue({
     ...App

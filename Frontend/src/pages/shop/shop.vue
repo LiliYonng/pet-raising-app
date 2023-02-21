@@ -1,97 +1,19 @@
 <template>
     <view class="page-content">
-        <!-- 筛选弹层 START -->
-        <view :class="'popup-container' + (filterShow ? ' show' : '')">
-            <view class="mask" @click="closeFilter"></view>
-            <view class="popup">
-                <image
-                    class="link close-btn"
-                    src="/static/icon/popup-close.svg"
-                    mode="aspectFit"
-                    @click="closeFilter"
-                ></image>
-                <view class="popup-header">筛选条件</view>
-                <view class="spec-row" v-for="(item,index) in specAry" v-if="index !=3">
-                    <view class="spec-title">{{item.title}}</view>
-                    <view class="spec-list">
-                        <view v-for="(sub,subInd) in item.data" 
-                        :class="sub.checked ||item.checkInd == subInd  ? 'active' : ''"
-                        @click='chooseTap(index,subInd)'
-                        >{{sub.name}}</view>
-                    </view>
-                </view>
-                <view class="spec-row">
-                    <view class="spec-title">价格区间</view>
-                    <view class="pricing-row">
-                        <view class="title">日租金</view>
-                        <input placeholder="最低价" type="digit" maxlength="8" v-model="rentRange.min"/>
-                        <view class="separator">~</view>
-                        <input placeholder="最高价" type="digit" v-model="rentRange.max" maxlength="8" />
-                    </view>
-                    <view class="pricing-row">
-                        <view class="title">押金</view>
-                        <input placeholder="最低价" type="digit" maxlength="8" v-model="depositRange.min" />
-                        <view class="separator">~</view>
-                        <input placeholder="最高价" type="digit" maxlength="8" v-model="depositRange.max" />
-                    </view>
-                </view>
-                <view class="action-btns flex">
-                    <view class="link reset-btn" @click="filterReset">重置</view>
-                    <view class="link confirm-btn" @click="filterConfirm">确定</view>
-                </view>
-            </view>
-        </view>
-        <!-- 筛选弹层 END -->
-
         <view class="header" :style="'padding-top: ' + safeTop + 'px'">
             <view class="filter-list flex">
-                <view @click="isOrder = true" :class="[{ active:specAry[3].checkInd}, 'filter-item link']" >
+                <view @click="order('synthesis')" :class="[orderBy=='synthesis'? 'active':'', 'filter-item link']" >
                     <view>综合</view>
+                </view>
+                <view @click="order('price')" :class="[orderBy=='price'?'active':'', 'filter-item link']">
+                    <view>价格</view>
                     <image src="/static/icon/filter-arrow.svg"></image>
                 </view>
-                <view @click="isQuality = true" :class="[{ active: activeQuality}, 'filter-item link']">
-                    <view>成新度</view>
+                <view @click="order('sales')" :class="[orderBy=='sales'?'active':'', 'filter-item link']">
+                    <view>销量</view>
                     <image src="/static/icon/filter-arrow.svg"></image>
-                </view>
-                <view @click="isDays = true" :class="[{ active:specAry[2].checkInd}, 'filter-item link']">
-                    <view>租期</view>
-                    <image src="/static/icon/filter-arrow.svg"></image>
-                </view>
-                <view class="filter-item link" @click="showFilter">
-                    <view>筛选</view>
-                    <image src="/static/icon/filter-icon.svg"></image>
                 </view>
             </view>
-        </view>
-        <view calss="filter-action">
-            <u-popup :show="isOrder">
-                <view class="filter-data-list">
-                    <li :class="[{ active:specAry[3].checkInd == index }, 'list-item']" 
-                        v-for="(item,index) in specAry[3].data"
-                        @click="chooseTap(3,index)"
-                        >{{item.name}}</li>
-                </view>
-            </u-popup>
-            <u-popup :show="isQuality">
-                <view class="filter-data-list">
-                    <li :class="[{ active:item.checked }, 'list-item']" 
-                        v-for="(item,index) in specAry[1].data"
-                        @click="chooseTap(1,index)"
-                        >{{item.name}}</li>
-                    <view class="action-btns flex">
-                        <u-button @click="filterConfirm()">确定</u-button>
-                        <u-button @click="closeAction()">取消</u-button>
-                    </view>
-                </view>
-            </u-popup>
-            <u-popup :show="isDays">
-                <view class="filter-data-list">
-                    <li :class="[{ active:specAry[2].checkInd == index }, 'list-item']" 
-                        v-for="(item,index) in specAry[2].data"
-                        @click="chooseTap(2,index)"
-                        >{{item.name}}</li>
-                </view>
-            </u-popup>
         </view>
         <view class="goods-list">
             <view class="goods-item" v-for="item in goodsList" :key="item.gid"
@@ -100,10 +22,10 @@
                 <view class="goods-info">
                     <view class="name">{{ item.name }}</view>
                     <view class="badge">
-                        <view v-for="(tag, index) in item.tags" :key="index">{{ tag }}</view>
+                        <view v-for="(tag, index) in String(item.tags).split(',')" :key="index">{{ tag }}</view>
                     </view>
                     <view class="price">
-                        ¥<text>{{ item.price }}</text>
+                        ¥<text>{{ item.priceMin }}</text>
                     </view>
                     <view class="goods-bottom">
                         <view class="tags">
@@ -122,9 +44,6 @@ const app = getApp();
 export default {
     data() {
         return {
-            safeTop: 0,
-            filterShow: false,
-            cityName: '定位中',
             goodsList: [
                 {
                     gid:123,
@@ -132,8 +51,8 @@ export default {
                     name:'小狗窝',
                     price:'18',
                     tags:['99新','性价比'],
-                    safe:1,
-                    canBuy:1,
+                    safe:'1',
+                    canBuy:'1',
                 },
                 {
                     gid:123,
@@ -146,109 +65,23 @@ export default {
                 },
 
             ],
-            filters: '',
-            keyWord:'',
-            inputStyle:{
-                background:'#E8E8E8',
-                border:'none',
-                padding:0,
-                borderRadius: '33px',
-            },
-            isOrder:false,
-            isQuality:false,
-            activeQuality:false,
-            isDays:false,
-            specAry:[
-                {
-                    title:'折扣与服务',
-                    type:'services',
-                    mult:1, //是否多选 
-                    data:[
-                        {name:'官方质检',value:'certified',checked:false},
-                        {name:'安心租',value:'safe',checked:false},
-                        {name:'寄出包邮',value:'freeSend',checked:false},
-                        {name:'包邮',value:'freeReturn',checked:false},
-                        {name:'可买断',value:'canBuy',checked:false},
-                        {name:'顺丰发货',value:'sfSend',checked:false},
-                        ],
-                },
-                {
-                    title:'成新度',
-                    type:'quality',
-                    mult:1,
-                    data:[
-                    {name:'80新',
-                    value:'1',checked:false
-                    },{
-                    name:'90新',
-                    value:'2',checked:false
-                    },{
-                    name:'95新',
-                    value:'3',checked:false
-                    },
-                    {
-                    name:'99新',
-                    value:'4',checked:false
-                    },
-                    {
-                    name:'准新',
-                    value:'5',checked:false
-                    },                    
-                    {
-                    name:'全新',
-                    value:'6',checked:false
-                    },
-                    ],
-                },
-                {
-                    title:'起租期',
-                    type:'days',
-                    checkInd:null,
-                    data:[
-                    {name:'3天内',value:'<=3'},
-                    {name:'7天',value:'7'},
-                    {name:'30天',value:'30'},
-                    {name:'90天',value:'90'},
-                    {name:'180天',value:'180'},
-                    {name:'365天',value:'365'},
-                    ],
-                },
-                {
-                    title:'综合排序',
-                    type:'orderBy',
-                    checkInd:null,
-                    data:[
-                        {value:'',name:'默认排序'},
-                        {value:'priceAsc',name:'价格升序'},
-                        {value:'priceDesc',name:'价格降序'},
-                        {value:'salesAsc',name:'销量升序'},
-                        {value:'salesDesc',name:'销量降序'},
-                    ]
-                }
-            ],
-            rentRange:{
-                min:null,
-                max:null
-            },
-            depositRange:{
-                min:null,
-                max:null
-            },
+            orderBy:''
         }
     },
     onLoad(options) {
         this.keyWord = options.query
         // this.queryGoodsList({ query: options.query })
-
+        this.queryGoodsList()
         // this.$data.safeTop = app.globalData.sysInfo.statusBarHeight + app.globalData.sysInfo.titleBarHeight;
     },
     onShow() {
     },
     methods: {
         // 查询商品列表数据
-        queryGoodsList(data) {
-            this.$api.getGoodsList(data).then(resp => {
-                this.goodsList = resp.data
+        queryGoodsList() {
+            this.$api.getGoodsList().then(resp => {
+                console.log(resp)
+                this.goodsList = resp.goodsList
             })
         },
         // 跳转到商品详情
@@ -257,28 +90,9 @@ export default {
                 url: `/pages/shop/goodsDetail?gid=${gid}`
             })
         },
-        closeFilter() {
-            this.$data.filterShow = false;
-        },
-        showFilter() {
-            this.$data.filterShow = true;
-        },
-        pickCity() {
-            // #ifdef MP-ALIPAY
-            my.chooseCity({
-                showLocatedCity: true,
-                showHotCities: true,
-                success: (res) => {
-                    this.$data.cityName = res.city;
-                    app.globalData.cityName = res.city;
-                },
-            })
-            // #endif
-            // #ifndef MP-ALIPAY
-            uni.navigateTo({
-                url: '/pages/index/region'
-            })
-            // #endif
+        order(key){
+            this.orderBy = key==this.orderBy?'':key;
+
         },
         change(option){
             if(option.detail.value){
@@ -357,7 +171,6 @@ export default {
              chooseObj.rentRange = {...this.rentRange}
              chooseObj.depositRange ={...this.depositRange}
             this.queryGoodsList({ query: this.keyWord,filters:JSON.stringify(chooseObj) })
-            this.closeFilter()
         },
         closeAction(){
             this.isQuality=false
@@ -560,6 +373,12 @@ export default {
 .filter-list .filter-item.active {
     color: #F35D1D;
     font-weight: bold;
+}
+.filter-list .filter-item.active{
+    image{
+        transform:rotate(180deg);
+        color: #F35D1D;
+    }
 }
 
 .filter-list .filter-item {

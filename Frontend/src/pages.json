@@ -103,6 +103,9 @@
 			"path": "pages/shop/goodsDetail"
 		}
     ],
+	"requiredPrivateInfos":[
+		"chooseAddress"
+	],
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "uni-app",
