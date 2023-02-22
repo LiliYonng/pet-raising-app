@@ -149,6 +149,13 @@
 				goodsId:'',
 				order:{
                     store:'xx'
+                },
+                sendInfo:{
+                    sendAddr: "广东省 广州市 越秀区 黄花岗街道环市东路463号广东工业大学生活区",
+					sendName: "A",
+					sendNo: 0,
+					sendRegion: "广东省 广州市 越秀区 ",
+					sendTel: "19924689037",
                 }
 			}
 		},
@@ -200,24 +207,30 @@
 					})
 					return
 				}
-                if(!this.addr.sendName){
-                    uni.showToast({
-						title:'请选择配送地址',
-						icon:'error'
-					})
-					return
-                }
-                const data = {
-                    gid:this.goodsId,
-                    ...this.selected
-                }
-				// this.logining().then(res=>{
-				// setTimeout(()=>{
-				// 	uni.navigateTo({
-				// 		url: '/pages/goods/buy?data='+encodeURIComponent(JSON.stringify(data))
+                // if(!this.addr.sendName){
+                //     uni.showToast({
+				// 		title:'请选择配送地址',
+				// 		icon:'error'
 				// 	})
-				// },500)
-				// })
+				// 	return
+                // }
+                const data = {
+                    goodsId:this.goodsId,
+                    goods_core:this.order.goodsCore,
+                    userMsg:this.userMsg?this.userMsg:'',
+                    num:this.goodsNum,
+                    ...this.sendInfo,
+                    specText:this.selected.color+this.selected.size,
+                    discount:0,
+                    buyPrice:this.goodsNum * this.goodsInfo.priceMin,
+                }
+                this.$api.order(data).then(res=>{
+                    if(res.sn){
+                        uni.navigateTo({
+                            url:'/pages/order/orderDetail?sn='+encodeURIComponent(JSON.stringify(res.sn))
+                        })
+                    }
+                })
 
 			},
 			bannerChange(e){
@@ -227,6 +240,7 @@
                 this.selected[key] = ind;
                 if(this.selected.color!=-1 && this.selected.size!=-1){
                     this.$api.getStore({gid:this.goodsId,...this.selected}).then(res=>{
+                        this.order.goodsCore = res.data.goods_core?res.data.goods_core:null
                         this.order.store = res.data.store? res.data.store : 0
                     })
                 }

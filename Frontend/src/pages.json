@@ -89,6 +89,15 @@
             
         },
 		{
+            "path" : "pages/order/orderDetail",
+            "style" :                                                                                    
+            {
+                "navigationBarTitleText": "",
+                "enablePullDownRefresh": false
+            }
+            
+        },
+		{
 			"path" : "pages/login/login",
 			"style" :                                                                                    
 			{

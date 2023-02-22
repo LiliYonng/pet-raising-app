@@ -1,37 +1,9 @@
 <template>
-	<view class="page-content" :style="'padding-bottom: calc(14.6667vw + '+safeBottom+'px)'">
+	<view class="page-content">
 		<view class="page-bg"></view>
-		<!-- 底栏 START -->
-		<view class="bottom-bar flex" :style="'padding-bottom:'+safeBottom+'px'">
-			<view class="bottom-bar-inner" v-if="orderData.status == 0">
-				<view class="flex">
-					<view class="cancel-btn link flex" @click="cancelOrder(oid)">
-						取消订单
-					</view>
-					<view class="buy-btn link flex" @click="pay()">
-						去付款
-					</view>
-				</view>
-			</view>
-			<view class="bottom-bar-inner" v-if="orderData.status == 3">
-				<view class="flex">
-					<view class="buy-btn link flex" @click="goReturn()">归还</view>
-				</view>
-			</view>
-		
-		</view>
-		<!-- 底栏 END -->
 		<view class="container">
-			<view class="order-brief">
-				<view class="flex">
-					<view class="status">{{STATUS[orderData.status]}}</view>
-					<view class="timer"><text>{{showTime}}</text></view>
-				</view>
-				<view class="order-desc">
-				{{orderData.alipayAuthStatus!=1?'您的订单还未进行押金减免，请及时处理':'您的订单已进行押金减免'}}
-					
-				</view>
-			</view>
+		<view class="order-brief">
+		<view class="status">{{STATUS[orderData.status]}}</view></view>
 			<view class="addr-box box">
 				<view class="name" v-if="orderData.sendName">
 					{{orderData.sendName}}
@@ -41,70 +13,43 @@
 				<view style="margin:1vw">{{orderData.userMsg}}</view>
 			</view>
 			<view class="goods-box flex box">
-				<image :src="orderData.goodsInfo.cover" mode="aspectFit"></image>
+				<image :src="orderData.cover" mode="aspectFit"></image>
 				<view class="goods-text">
-					<view class="name">{{orderData.goodsInfo.name}}</view>
+					<view class="name">{{orderData.name}}</view>
 					<view class="spec"{{orderData.specText}}</view>
 					<view class="num">数量：{{orderData.num}}</view>
 				</view>
 			</view>
 			<view class="order-info box">
+				<view class="row">
+					<view class="row-title">原价格</view>
+					<view>￥{{Number(orderData.buyPrice)+Number(orderData.discount)}}</view>
+				</view>
+				<view class="row">
+					<view class="row-title">优惠金额</view>
+					<view>- ¥{{orderData.discount}}</view>
+				</view>
 				<view class="row bold">
-					<view class="row-title">首月实付金额</view>
-					<view class="price">¥ <text>{{orderData.firstPay}}</text></view>
-				</view>
-				<view class="row">
-					<view class="row-title">尾期租金</view>
-					<view>{{orderData.lastPay}}</view>
-				</view>
-				<view class="row">
-					<view class="row-title">剩余租期</view>
-					<view>￥{{orderData.monthPrice}}x{{orderData.stageNum}}期 </view>
-				</view>
-				<view class="row">
-					<view class="row-title">总租金</view>
-					<view>￥{{orderData.totalRent}}</view>
-				</view>
-				<view class="row">
-					<view class="row-title">优惠券</view>
-					<view class="coupon red">- ¥{{orderData.discount}}</view>
+					<view class="row-title">实际金额</view>
+					<view class="coupon red">￥ {{orderData.buyPrice}}</view>
 				</view>
 				<view class="row">
 					<view class="row-title">配送方式</view>
 					<view>顺丰快递 | 寄出包邮 | 归还自费</view>
 				</view>
-				<view class="row">
-					<view class="row-title">买断尾款</view>
-					<view> ¥{{orderData.buyPrice}}</view>
-				</view>
-			</view>
-			<view class="order-info box">
-				<view class="row">
-					<view class="row-title">平台规则减免</view>
-					<view>￥80.0</view>
-				</view>
-				<view class="row">
-					<view class="row-title">芝麻信用减免</view>
-					<view>￥1080.0</view>
-				</view>
-				<view class="row">
-					<view class="row-title">押金冻结方式</view>
-					<view class="flex"><text>支付宝资金授权</text><image src="/static/images/order/question.svg" mode="aspectFit" class="link"></image></view>
-				</view>
-				<view class="desc">提示：以上平台规则减免显示的额度，以最终发货审核为准</view>
 			</view>
 			<view class="order-info box">
 				<view class="row">
 					<view class="row-title">交易快照</view>
-					<view class="flex link"><text>查看快照</text><image src="/static/images/order/arrow-right.svg" mode="aspectFit" class="link"></image></view>
+					<view class="flex link"><text>查看快照</text><image src="/static/order/arrow-right.svg" mode="aspectFit" class="link"></image></view>
 				</view>
 				<view class="row">
 					<view class="row-title">租赁协议</view>
-					<view class="flex link"><text>查看协议</text><image src="/static/images/order/arrow-right.svg" mode="aspectFit" class="link"></image></view>
+					<view class="flex link"><text>查看协议</text><image src="/static/order/arrow-right.svg" mode="aspectFit" class="link"></image></view>
 				</view>
 				<view class="row">
 					<view class="row-title">订单编号</view>
-					<view>{{orderData.sn}}<image src="/static/images/copy.svg" mode="aspectFit" class="link" @click="copy('54564561321564652198')"></image></view>
+					<view>{{orderData.sn}}<image src="/static/order/copy.svg" mode="aspectFit" class="link" @click="copy('54564561321564652198')"></image></view>
 				</view>
 				<view class="row">
 					<view class="row-title">创建时间</view>
@@ -122,24 +67,7 @@
 			return {
 				safeBottom: 0,
 				oid:null,
-				orderData:{
-					buyPrice: "0.01"
-					created: "2023-01-17 00:50"
-					discount: "0.00"
-					goodsCore:'10001'
-					num: "1"
-					sendAddr: "广东省 广州市 越秀区 黄花岗街道环市东路463号广东工业大学生活区"
-					sendName: "A"
-					sendNo: null
-					sendRegion: "广东省 广州市 越秀区 "
-					sendTel: "19924689037"
-					sent: null
-					sn: "T202301170050398689"
-					specText: "亮黑色,8GB+128GB"
-					stageNum: "3"
-					status: "1"
-					userMsg: "超长备注超长备注超长备注超长备注超长超长备注超长备注超长备注超长备注超长备注超长超长备注超长备注超超长备注超长备注超长超长备注超长备注超长备注备注长备注"
-				},
+				orderData:{},
 				endTime:'',
 				showTime:'',
 				payTimer:'',
@@ -149,20 +77,9 @@
 			}
 		},
 		onLoad(e){
-			let safeBottom = 0;
-			if(app.globalData.sysInfo.safeArea){
-				safeBottom = app.globalData.sysInfo.safeArea.bottom;
-			} else {
-				if(app.globalData.sysInfo.platform == 'ios') safeBottom = 34;
-			}
-			this.$data.safeBottom = safeBottom;
-			this.oid = e.id
-			// this.loadData()
-
-			// if(e.type)//type=1时，立即付款
-			// {
-			// 	this.pay()
-			// }
+			const sn = JSON.parse(decodeURIComponent(e.sn))
+			this.oid = sn
+			this.loadData()
 		},
 		onHide(){
 			this.payTimer && clearInterval(this.payTimer);
@@ -185,15 +102,9 @@
 				})
 			},
 			loadData(){
-				this.$api.getOrderDetail({oid:this.oid}).then(res=>{
+				this.$api.getOrderDetail({sn:this.oid}).then(res=>{
+					console.log(res)
 					this.orderData = res.data
-					if(this.orderData.status == 0){ //待支付订单设置倒计时
-						const time = this.dayjs(this.orderData.created).add(30, 'm')
-						this.endTime = time.valueOf()
-						this.payTimer = setInterval(() => {
-						return this.countDown()
-						}, 1000);
-					}
 				})
 			},
 			countDown(){
@@ -308,7 +219,18 @@
 	}
 </script>
 
-<style>
+<style scoped lang="scss">
+	.box{
+	background-color: #fff;
+    border-radius: 2.1333vw;
+    overflow: hidden;
+    margin-bottom: 3.2vw;
+	}
+	.flex{
+		display:flex;
+		text-align:center;
+		align-items:center;
+	}
 	.order-info .desc {
 		color: #999;
 		font-size: 22rpx;
@@ -408,7 +330,7 @@
 		width: 40vw;
 	}
 	.goods-box .num{
-		font-size:0.26rem;
+		font-size:26rpx;
 	}
 	.goods-box image {
 		width: 20.2667vw;
@@ -447,7 +369,6 @@
 		margin-bottom: 3.2vw;
 	}
 	.container {
-		padding-top: 26.9333vw;
 		margin: 0 4vw;
 		color: #222;
 	}
