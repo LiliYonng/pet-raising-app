@@ -7,6 +7,7 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var newsRouter = require('./routes/news');
 var goodsRouter = require('./routes/goods');
+var manageRouter = require('./routes/manage/index');
 const { createProxyMiddleware} = require('http-proxy-middleware');
 var app = express();
 app.all('*', function (req, res, next) {
@@ -36,6 +37,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/', indexRouter);
 app.use('/api/news', newsRouter);
 app.use('/api/goods',goodsRouter);
+app.use('/api/manage',manageRouter);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
