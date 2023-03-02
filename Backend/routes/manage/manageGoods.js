@@ -22,9 +22,27 @@ router.get('/getMalls', function(req, res, next) {
 
  router.post('/add',function(req,res,next){
   const form = req.body;
+  console.log(form)
+  const item = {
+    name:form.name,
+    priceMin:form.priceMin?form.priceMin:0,
+    colors:form.colors,
+    sizes:form.sizes,
+    cover:form.cover
+  }
   connection.escape(form);
-  connection.query('insert into goods set ?',form,(err,results,fields)=>{
+  connection.query('insert into goods set ?',item,(err,results,fields)=>{
     if(err) throw err;
+    const sItem={
+      gid:results.insertId,
+      store:form.sum_store,
+      sale:form.sum_sale,
+      color:0,
+      size:0,
+    }
+    connection.query('insert into goodsStore set ?',sItem,(err,results,fields)=>{
+      if(err) throw err;
+    })
     res.status(200).send('ok');
   })
  });
@@ -38,9 +56,9 @@ router.get('/getMalls', function(req, res, next) {
   })
  });
  router.post('/edit',function(req,res,next){
-  const {priceMin,name,onSale,gid,goods_core,sum_store} = req.body;
+  const {priceMin,name,onSale,gid,goods_core,sum_store,cover} = req.body;
   // 能改变的只有priceMin, name,onSale,
-  connection.query('update goods set priceMin = ?,name = ?,onSale = ? where gid = ?',[priceMin,name,onSale,gid],(err,results,fields)=>{
+  connection.query('update goods set cover = ?,priceMin = ?,name = ?,onSale = ? where gid = ?',[cover,priceMin,name,onSale,gid],(err,results,fields)=>{
     if(err) throw err;
     if(goods_core){
       connection.query('update goodsStore set store = ? where goods_core = ?',[sum_store,goods_core],(err,results,fields)=>{

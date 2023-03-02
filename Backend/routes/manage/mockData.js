@@ -3,11 +3,11 @@ let List = [];
 for (let i = 0; i < 7; i++) {
     List.push(
       Mock.mock({
-        母婴: Mock.Random.float(100, 8000, 0, 0),
-        家居百货: Mock.Random.float(100, 8000, 0, 0),
-        鞋包饰品: Mock.Random.float(100, 8000, 0, 0),
-        食品: Mock.Random.float(100, 8000, 0, 0),
-        数码家电: Mock.Random.float(100, 8000, 0, 0),
+        宠物粮: Mock.Random.float(100, 8000, 0, 0),
+        宠物玩具: Mock.Random.float(100, 8000, 0, 0),
+        宠物饰品: Mock.Random.float(100, 8000, 0, 0),
+        宠物用具: Mock.Random.float(100, 8000, 0, 0),
+        相关文创: Mock.Random.float(100, 8000, 0, 0),
         其他: Mock.Random.float(100, 8000, 0, 0)
       })
     )
@@ -16,23 +16,23 @@ const videoData =  {
     title: '月销量百分比',
     data: [
       {
-        name: '母婴',
+        name: '宠物粮',
         value: 2999
       },
       {
-        name: '食品',
+        name: '宠物玩具',
         value: 5999
       },
       {
-        name: '鞋包饰品',
+        name: '宠物饰品',
         value: 1500
       },
       {
-        name: '数码家电',
+        name: '相关文创',
         value: 1999
       },
       {
-        name: '家居百货',
+        name: '宠物用具',
         value: 2200
       },
       {
@@ -96,31 +96,31 @@ const orderData = {
   };
 const tableData =[
     {
-      name: '母婴',
+      name: '宠物粮',
       todayBuy: 322,
       monthBuy: 2523,
       totalBuy: 5320
     },
     {
-      name: '食品',
+      name: '宠物用品',
       todayBuy: 203,
       monthBuy: 122,
       totalBuy: 2101
     },
     {
-      name: '鞋包饰品',
+      name: '宠物饰品',
       todayBuy: 812,
       monthBuy: 3212,
       totalBuy: 6512
     },
     {
-      name: '数码家电',
+      name: '相关文创',
       todayBuy: 123,
       monthBuy: 221,
       totalBuy: 3221
     },
     {
-      name: '居家百货',
+      name: '宠物玩具',
       todayBuy: 522,
       monthBuy: 2120,
       totalBuy: 3230
