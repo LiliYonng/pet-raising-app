@@ -2,9 +2,9 @@
 	<view class="content">
 		<view class="bg-div">
 			<view class="user-info">
-				<image src="http://175.178.232.232:9000/img/userImg1.8c812df3.jpg" class="user-img img" mode=""></image>
+				<image src="http://localhost:8080/Images/userImg.jpg" class="user-img img" mode=""></image>
 				<view class="info-text">
-					<h3>张三</h3>
+					<h3>猫主子</h3>
 					<p>我是修猫咪爱好者！</p>
 				</view>
 			</view>
@@ -26,15 +26,6 @@
 				</view>
 				<view class="my-pet">
 					<view class="pet-info">
-						<image src="../../static/cat.png" class="pet-img img" mode=""></image>
-						<view class="info-text">
-							<h3 class="pet-name">小猪</h3>
-							<p>猫咪 4个月</p>
-						</view>
-					</view>
-				</view>
-				<view class="my-pet">
-					<view class="pet-info">
 						<image src="../../static/add.png" class="add-img" mode=""></image>
 						<view class="info-text">
 							<h3 class="pet-name" @click="addPet">添加宠物</h3>
@@ -42,13 +33,37 @@
 					</view>
 				</view>
 			</view>
-			<view class="setting">
-				<view class="setting-content">
-					<image src="../../static/setting.png" class="setting-icon"mode=""></image>
-					<p>账号设置</p>
+			<view class=setting>
+				<view class="setting-item">
+					<view class="setting-content">
+						<image src="../../static/setting.png" class="setting-icon"mode=""></image>
+						<p>账号设置</p>
+					</view>
+					<image src="../../static/more.png" mode="" class="more-icon"></image>
 				</view>
-				<image src="../../static/more.png" mode="" class="more-icon"></image>
+								<view class="setting-item">
+					<view class="setting-content">
+						<image src="../../static/collect.png" class="setting-icon"mode=""></image>
+						<p>我的收藏</p>
+					</view>
+					<image src="../../static/more.png" mode="" class="more-icon"></image>
+				</view>
+								<view class="setting-item">
+					<view class="setting-content">
+						<image src="../../static/zan.png" class="setting-icon"mode=""></image>
+						<p>我赞过的</p>
+					</view>
+					<image src="../../static/more.png" mode="" class="more-icon"></image>
+				</view>
+								<view class="setting-item">
+					<view class="setting-content">
+						<image src="../../static/order.png" class="setting-icon"mode=""></image>
+						<p>我的订单</p>
+					</view>
+					<image src="../../static/more.png" mode="" class="more-icon"></image>
+				</view>
 			</view>
+
 		</view>
 	</view>
 </template>
@@ -215,6 +230,9 @@
 }
 .setting{
 	margin-top: 80upx;
+}
+.setting-item{
+	margin-top:20px;
 	display: flex;
 	justify-content: space-between;
 	background-color: #FFFCF8;

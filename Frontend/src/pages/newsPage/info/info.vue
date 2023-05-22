@@ -9,14 +9,14 @@
 			<view class="comment-list">
 				<uni-list>
 					<uni-list-item :title="item.author" :note="item.comment" 
-						thumb="https://vkceyugu.cdn.bspapp.com/VKCEYUGU-dc-site/460d46d0-4fcc-11eb-8ff1-d5dcf8779628.png"
+						:thumb="item.author=='猫主子'?'http://localhost:8080/Images/userImg.jpg':'http://localhost:8080/Images/logo.png'"
 						thumb-size="sm" :rightText="FormatDate(item.comment_time)" 
 						v-for="(item,index) in commentList"
 						/>
 				</uni-list>
 			</view>
 			<view class="input-wrap">
-				张三 ：
+				猫主子 ：
 				<view class="input-box">
 						<uni-easyinput v-model="commentData.comment" placeholder="快来发言吧" />
 				</view>
@@ -35,7 +35,7 @@
 				commentList:[],
 				postId:'',
 				commentData:{
-					author:'张三',
+					author:'猫主子',
 					author_id:123,
 					comment:'',
 					c_post_id:'',
@@ -125,8 +125,11 @@
 .input-wrap{
 	margin-top: 10px;
 }
+.comment{
+	margin-top:50px;
+}
 .comment-list{
-	margin-top: 10px;
+	margin-top: 20px;
 }
 .input-box{
 	display: inline-block;

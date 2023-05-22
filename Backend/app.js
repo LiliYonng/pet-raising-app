@@ -28,12 +28,6 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-// app.use('/api', createProxyMiddleware({ target: 'http://localhost:8080', changeOrigin: true,
-// pathRewrite:{
-//   '/api':''
-// }
-// }));
-
 app.use('/api/', indexRouter);
 app.use('/api/news', newsRouter);
 app.use('/api/goods',goodsRouter);

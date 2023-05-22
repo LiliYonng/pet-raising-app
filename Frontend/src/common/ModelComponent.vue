@@ -1,5 +1,6 @@
 <template>
     <canvas type="webgl" id="canvasDom" @touchstart="touchStart" @touchmove="touchMove" @touchend="touchEnd" @touchcancel="touchCancel" @longtap="longTap" @tap="tap"></canvas>
+
 </template>
 <script>    
     import * as THREE from '../libs/three.weapp.js'
@@ -51,9 +52,10 @@
           init(canvas){ //初始化加载器，相机，灯光
               // projector = new THREE.Projector();
               lastChange = {model:null,color:null};
-              renderer = new THREE.WebGLRenderer({ canvas });
+              renderer = new THREE.WebGLRenderer({ canvas:canvas,alpha:true});
               raycaster = new THREE.Raycaster();
               renderer.shadowMap.enabled = true;
+              renderer.setClearAlpha(0.0);
               clock = new THREE.Clock();;
               const fov = 45;
               const aspect = 1;  // the canvas default
@@ -65,7 +67,7 @@
               this.controls.target.set(0, 5, 0);
               this.controls.update();
               scene = new THREE.Scene();
-              scene.background = new THREE.Color('#DEFEFF');
+              // scene.background = new THREE.Color('#DEFEFF');
 
             {
               const skyColor = 0xFFFFFF;  // light blue
@@ -112,7 +114,7 @@
                 cameraHelper.update();
               }
               updateCamera();
-              // this.addCurve();
+              this.addCurve();
               this.loadGLTF();
           },
           // 相机调整
@@ -157,8 +159,9 @@
             let GLTFLoader = gLTF(THREE);
           const gltfLoader = new GLTFLoader();
           // http://www.l0v0l.xyz/dog-animated/scene.gltf
+          // http://localhost:8080/model/dog-2/scene.gltf
           console.log('啊哈哈')
-          gltfLoader.load('http://localhost:8080/model/dog-2/scene.gltf', (gltf) => {
+          gltfLoader.load('http://localhost:8080/model/cartoon/caiquan4.gltf', (gltf) => {
             console.log(gltf)
             const root = gltf.scene;
             root.name = 'dog'
@@ -173,7 +176,6 @@
 
             const boxSize = box.getSize(new THREE.Vector3()).length();
             const boxCenter = box.getCenter(new THREE.Vector3());
-
             // set the camera to frame the box
             this.frameArea(boxSize*0.5, boxSize, boxCenter, camera);
             this.controls.minDistance = boxSize*1;
@@ -243,54 +245,20 @@
                 animationId = canvas.requestAnimationFrame(this.render);
         },
         addCurve(){
-          let curve;
-          let curveObject;
-          const controlPoints = [
-              [1.118281, 5.115846, -3.681386],
-              [3.948875, 5.115846, -3.641834],
-              [3.960072, 5.115846, -0.240352],
-              [3.985447, 5.115846, 4.585005],
-              [-3.793631, 5.115846, 4.585006],
-              [-3.826839, 5.115846, -14.736200],
-              [-14.542292, 5.115846, -14.765865],
-              [-14.520929, 5.115846, -3.627002],
-              [-5.452815, 5.115846, -3.634418],
-              [-5.467251, 5.115846, 4.549161],
-              [-13.266233, 5.115846, 4.567083],
-              [-13.250067, 5.115846, -13.499271],
-              [4.081842, 5.115846, -13.435463],
-              [4.125436, 5.115846, -5.334928],
-              [-14.521364, 5.115846, -5.239871],
-              [-14.510466, 5.115846, 5.486727],
-              [5.745666, 5.115846, 5.510492],
-              [5.787942, 5.115846, -14.728308],
-              [-5.423720, 5.115846, -14.761919],
-              [-5.373599, 5.115846, -3.704133],
-              [1.004861, 5.115846, -3.641834],
-            ];
-            const p0 = new THREE.Vector3();
-            const p1 = new THREE.Vector3();
-            let con = controlPoints.map((p, ndx) => {
-              p0.set(...p);
-              p1.set(...controlPoints[(ndx + 1) % controlPoints.length]);
-              return [
-                (new THREE.Vector3()).copy(p0),
-                (new THREE.Vector3()).lerpVectors(p0, p1, 0.1),
-                (new THREE.Vector3()).lerpVectors(p0, p1, 0.9),
-              ];
-            });
-            curve = new THREE.CatmullRomCurve3(
-              [].concat(...con),
-              true,
-            );
-            const points = curve.getPoints(250);
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-            curveObject = new THREE.Line(geometry, material);
-            curveObject.scale.set(100, 100, 100);
-            curveObject.position.y = -621;
-            curveObject.visible = false;
-            scene.add(curveObject);
+           const planeGeometry = new THREE.PlaneGeometry(60, 40, 1, 1)
+            // 设置平面的材质
+            const planeMaterial = new THREE.MeshLambertMaterial({
+              'color': 0xeeeeee
+            })
+            // 赋值到Mesh
+            const plane = new THREE.Mesh(planeGeometry, planeMaterial)
+            // 设置平面位置和旋转
+            plane.rotation.x = -0.5 * Math.PI
+            plane.position.set(0, 10, 20)
+            // 设置地面为投影面
+            plane.receiveShadow = true
+            // 将平面添加到场景中
+            scene.add(plane)
         },
         // 开始动画
         startAnimation(skinnedMesh, animations, animationName) {
@@ -326,12 +294,17 @@
           console.log('长按')
           console.log('canvas', e)
         },
-        tap(e){
-          console.log('短触碰')
-          this.changeAnimation(this.model.animations[ Math.random()%5].name)
-          // this.animationName = "play_dead"
-          // mixers = this.startAnimation(null, this.model.animations, this.animationName);
-        },
+        // tap(e){
+        //   console.log('短触碰')
+        //   this.showRemind = false
+        //   this.showBox = false
+        //   console.log(this.showRemind)
+        //   this.$emit('showText', 1)
+        //   // this.changeAnimation(this.model.animations[ Math.random()%5].name)
+        //   // this.animationName = "play_dead"
+        //   // mixers = this.startAnimation(null, this.model.animations, this.animationName);
+          
+        // },
         changeAnimation(animationName){
           var clip = THREE.AnimationClip.findByName(this.model.animations, animationName);
           if (clip) {
@@ -346,51 +319,31 @@
         },
         activeAnimation(){
           this.render()
-        }
-        // async tap(e) {
-        //   console.log('短触2')
-        //   const rect = canvas.getBoundingClientRect()
-        //   let touch = e.touches[0];
-        //   const mouse = new THREE.Vector2();
-        //   console.log(touch.clientY)
-        //   	//获取 不同系统下、不同手机下的宽和高
-        //      let SystemInfoSync = await wx.getSystemInfoSync()
-        //   // canvas的width的一半 除以 (canvas的width 除以 系统的windowWidth)
-        //     let Cwidth =(rect.width / SystemInfoSync.windowWidth)
-        //     // canvas的height的一半 除以 (canvas的height 除以 系统的windowHeight)
-        //     let Cheight =(rect.height / SystemInfoSync.windowHeight)
-        //      mouse.x = -((touch.clientX ) / rect.width) * 2 + 1;
-        //     mouse.y = -((touch.clientY - 100) / rect.height) * 2 + 1;
-        //   // mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
-        //   // mouse.y = -((touch.clientY - rect.top )/ rect.height) * 2 + 1;
-        //   raycaster.setFromCamera(mouse, camera);
-        //   // create an array containing all objects in the scene with which the ray intersects
-        //   // var intersects = raycaster.intersectObjects( scene.children );
-        //   let intersects = []
-        //   intersects = raycaster.intersectObject(this.model.scene,true);
-        //   if (intersects.length>0){
-        //     console.log('选中了')
-        //     console.log(intersects)
-        //       // if (Boolean(lastChange.model)) {
-        //       //   lastChange.model.material.emissive.setHex(lastChange.color);
-        //       // }
-        //         // lastChange.model = intersects[0][0].object
-        //         // lastChange.color = intersects[0][0].object.material.emissive.getHex();
-        //         console.log(intersects[0].object.name)
-        //         console.log(intersects)
-        //         // this.outlineObj(intersects[0][0].object,canvas,scene,camera,renderer)
-                
-        //         intersects[0].object.material.emissive.setHex( Math.random() * 0xffffff );
-        //       // else{
-        //       //   lastChange.model = null;
-        //       //   lastChange.color = null;
-        //       // }
-        //       // if(progress == 0){
-        //       //    this.render();
-        //       // }
-        //       // intersects[0][0].object.material.color.setRGB(0.2,0.6,0.4);
-        //   }
-        // },
+        },
+        async tap(e) {
+          const rect = canvas.getBoundingClientRect()
+          let touch = e.touches[0];
+          const mouse = new THREE.Vector2();
+          mouse.x = -((touch.clientX ) / rect.width) * 2 + 1;
+          mouse.y = -((touch.clientY+100) / rect.height) * 2 + 1;
+          raycaster.setFromCamera(mouse, camera);
+          let intersects = []
+          intersects = raycaster.intersectObject(this.model.scene,true);
+          if (Boolean(lastChange.model)) {
+            lastChange.model.material.emissive.setHex(lastChange.color);
+          }
+          if (intersects.length>0){ // 选中，记录当前颜色
+                lastChange.model = intersects[0].object
+                lastChange.color = intersects[0].object.material.emissive.getHex();
+                intersects[0].object.material.emissive.setHex(0xffb041); 
+                this.$emit('showText', intersects[0].object.name)
+          }
+          else{ //没选中，清除上次记录
+            lastChange.model = null;
+            lastChange.color = null;
+            this.$emit('showText',0)
+          }
+        },
         
           
         },
@@ -401,4 +354,5 @@
     height:250px;
     width:100%;
   }
+
 </style>

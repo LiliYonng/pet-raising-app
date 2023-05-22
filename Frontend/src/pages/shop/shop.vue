@@ -69,7 +69,8 @@ export default {
         }
     },
     onLoad(options) {
-        this.keyWord = options.query
+        console.log('onload')
+        // this.keyWord = options.query
         // this.queryGoodsList({ query: options.query })
         this.queryGoodsList()
         // this.$data.safeTop = app.globalData.sysInfo.statusBarHeight + app.globalData.sysInfo.titleBarHeight;
@@ -79,7 +80,7 @@ export default {
     methods: {
         // 查询商品列表数据
         queryGoodsList() {
-            this.$api.getGoodsList().then(resp => {
+            this.$api.getGoodsList({orderBy:this.orderBy}).then(resp => {
                 console.log(resp)
                 this.goodsList = resp.goodsList
             })
@@ -92,7 +93,7 @@ export default {
         },
         order(key){
             this.orderBy = key==this.orderBy?'':key;
-
+            this.queryGoodsList()
         },
         change(option){
             if(option.detail.value){

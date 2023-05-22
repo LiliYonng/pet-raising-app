@@ -84,7 +84,10 @@ router.get('/getAllRemind',function(req,res,next) {
 });
 
 router.get('/getAllRecord',function(req,res,next) {
-  connection.query('select * from dailyList order by create_time desc',(err,results,fields)=>{
+  let {pet_id} = req.query;
+  pet_id = Number(pet_id)
+  console.log(req.query)
+  connection.query('select * from dailyList where pet_id = ? order by create_time desc ',pet_id,(err,results,fields)=>{
     if(err) throw err;
     let list= [...results];
     res.json(list)});

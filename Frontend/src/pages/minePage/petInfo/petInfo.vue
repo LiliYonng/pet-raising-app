@@ -83,13 +83,13 @@
 			this.$refs.form.setRules(this.rules)
 		},
 		onLoad:function(e){
-			if(e.dailyId)
+			if(e.petId)
 			{
 				uni.request({
-					url: 'http://localhost:3001/api/getDaily',
+					url: 'http://localhost:3001/api/getPet',
 					method: 'GET',
 					data: {
-						daily_id:e.dailyId
+						daily_id:e.petId
 					},
 					success: res => {
 						this.formData = {...res.data[0]}

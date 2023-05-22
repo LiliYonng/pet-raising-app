@@ -1,7 +1,22 @@
 <template>
 	<view class="content">
 			<view class="bg-div">
-				<v-tabs class="pet-tab" v-model="current" :tabs="tabs" :pills="true" bgColor="#FFCE86" line-height="0" pillsColor="#d89635" activeColor="#fff" @change="changeTab"></v-tabs>
+				<u-tabs class="pet-tab" :current="current" :list="tabs"
+					lineColor="#f19611" 
+				    lineWidth="30"
+					lineHeight="5"
+				:activeStyle="{
+					color: '#fff',
+					fontWeight: 'bold',
+					transform: 'scale(1.05)',
+					padding:'5px 5px'
+				}"
+				:inactiveStyle="{
+					color: '#606266',
+					transform: 'scale(1)'
+				}"
+				itemStyle="padding-left: 15px; padding-right: 15px; height: 34px;"
+				 @change="changeTab"></u-tabs>
 				<view class="pet-wrap">
 					<view class="pet-info">
 						<image :src="petImg[currentPet.petSpecies]" class="pet-img img" mode=""></image>
@@ -19,7 +34,7 @@
 						<p class="title">健康提醒</p>
 						<image src="../../static/icon/addition.png" mode="" @tap="setRemind"></image>
 					</header>
-					<scroll-view class="reminder-list" scroll-x="true" @scroll="scroll" scroll-left="120">
+					<scroll-view class="reminder-list" scroll-x="true"  scroll-left="120">
 						<view id="demo1" class="list-item" v-for="(item,index) in remindList" :Key="item.remind_id">
 							<view class="item-info">
 								<image :src="iconList[item.category]" class="reminder-img" mode=""></image>
@@ -40,22 +55,22 @@
 				<view class="record">
 					<header class="my-header">
 						<p class="title">2022年</p>
-						<p class='p_text' @click="addDaily">添加记录</p>
+						<p class='p_text' @click="addDaily">添加日志</p>
 					</header>
 					<view class="record-list">
 						<view class="list-item" v-for="(item,index) in recordList" :key="item.daily_id">
 							<view class="date">
 								<uni-dateformat style="display: block; margin-bottom: 10px;" :date="item.create_time" format="MM/dd" :threshold="[0,0]"></uni-dateformat>
-								<uni-icons @click="editDaily(item.daily_id)" type="compose" size="20" color="orange"></uni-icons>
-								<uni-icons @click="deleteDaily(index)" type="trash" size="20" color="red"></uni-icons>
+								<!-- <uni-icons @click="editDaily(item.daily_id)" type="compose" size="20" color="orange"></uni-icons> -->
+								<!-- <uni-icons @click="deleteDaily(index)" type="trash" size="20" color="red"></uni-icons> -->
 								
 							</view>
-							<view class="record-info">
+							<view class="record-info" @click="goDetail(item.daily_id)">
 								<div class="info-text">
 									<h3 class="head">{{item.title}}</h3>
 									<p class="content">{{item.content}}</p>
 								</div>
-								<image :src="item.cover" style="width:52px; height:52px;"></image>
+								<image :src="item.cover" style="width:52px; height:52px;border-radius:20px;"></image>
 							</view>
 						</view>
 					</view>
@@ -72,7 +87,7 @@
 				remindList:[],
 				recordList:[],
 				current: 0,
-				currentPet:{},
+				currentPet:null,
 				tabs: [],
 				petList:[],
 				species:[
@@ -90,11 +105,12 @@
 		onShow() {
 			this.getPet()
 			this.getAllRemind();
-			this.getAllRecord();
+			
 		},
 		methods: {
-			    changeTab(index) {
-					this.currentPet = this.petList[index];
+			    changeTab(pet) {
+					this.currentPet = this.petList[pet.index];
+					this.getAllRecord()
 			    },
 				getPet() {
 					uni.showLoading({
@@ -105,11 +121,15 @@
 						method: 'GET',
 						data: {},
 						success: res => {
+							console.log(res)
 							this.petList = res.data;
 							this.tabs = this.petList.map((item)=>{
-								return item.name;
+								return {name:item.name}
 							})
-							this.currentPet = this.petList[0];
+							console.log(this.tabs)
+							if(!this.currentPet)
+								this.currentPet = this.petList[0];
+							this.getAllRecord();
 							console.log(res.data)
 							uni.hideLoading();
 						},
@@ -132,10 +152,12 @@
 				});
 			},
 			getAllRecord() {
+				let pet_id = this.currentPet.pet_id
+				console.log(pet_id)
 				uni.request({
 					url: 'http://localhost:3001/api/getAllRecord',
 					method: 'GET',
-					data: {},
+					data: {pet_id:pet_id},
 					success: res => {
 						console.log(res.data)
 						this.recordList=res.data;
@@ -151,13 +173,15 @@
 				});
 			},
 			addDaily() {
+				let pet_id = this.currentPet.pet_id
 				uni.navigateTo({
-					url: './dailyDetail/addDaily'
+					url: './dailyDetail/addDaily?pet_id='+pet_id
 				});
 			},
 			changeTodo(index) {
 				this.remindList[index].done = !this.remindList[index].done;
 				this.updateItem(index)
+				this.getAllRecord()
 				uni.showToast({
 					title: '设置成功',
 					duration: 500,
@@ -214,41 +238,11 @@
 						complete: () => {}
 					});
 			},
-			editDaily(id) {
+			goDetail(id) {
 				uni.navigateTo({
 					url: './dailyDetail/addDaily?dailyId='+id
 				});
 			},
-			deleteDaily(index) {
-				const me = this;
-				uni.showModal({
-					title: '警告',
-					content: '确认是否删除？',
-					confirmColor: 'red',
-					confirmText:'确认',
-					cancelText:'取消',
-					success: function (res) {
-						if (res.confirm) {
-							uni.request({
-									url: 'http://localhost:3001/api/deleteDaily',
-									method: 'post',
-									data: {
-										daily_id:me.recordList[index].daily_id
-									},
-									success: res => {
-										console.log(res)
-										me.getAllRecord()
-										uni.hideLoading();
-									},
-									fail: () => {},
-									complete: () => {}
-								});
-						} else if (res.cancel) {
-							console.log('用户点击取消');
-						}
-					}
-				});
-			}
 	}
 	}
 </script>
@@ -316,6 +310,8 @@
 		color:#544F47;
 	}
 	.p_text{
+		padding: 5px 15px;
+   		border-radius: 20px;
 		border: 1px solid #867D7D;
 		padding:2px 5px;
 	}
@@ -381,11 +377,12 @@
 			margin-right: 10px;
 		}
 		.record-info{
-			padding:15px 10px;
+			padding:16px 12px;
 			background-color: #FAEDE2;
+			border-radius:20px;
 			width:250px;
 			display:flex;
-			justify-content: space-between;
+			justify-content: space-around;
 			.info-text{
 				display:inline-block;
 				width:75%;
@@ -393,13 +390,14 @@
 					overflow: hidden;
 					white-space: nowrap;
 					text-overflow: ellipsis;
-					font-size: 14px;
+					font-size: 13px;
 					font-weight: 600;
+					color:#524641;
 				}
 				.content{
 					padding-top:5px;
 					 text-indent:2em;
-					font-size:13px;
+					font-size:10px;
 					color:#524641;
 					overflow: hidden;
 					text-overflow: ellipsis;

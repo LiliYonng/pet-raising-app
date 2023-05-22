@@ -6,7 +6,11 @@ const{ connection} = require('../db.js');
 const { createSecretKey } = require('crypto');
 
 router.get('/getGoodsList', function(req, res, next) {
-    let sql = 'select * from  goods';
+    let {orderBy} = req.query
+    let sql = 'select * from  goods ';
+    if(orderBy == 'price') sql = 'select * from goods order by priceMin asc'
+    else if (orderBy == 'sales') sql = "select * from goods order by name asc"
+    
     connection.query(sql,(err,results,fields)=>{
       if(err) throw err;
       let goodsList= [...results];
